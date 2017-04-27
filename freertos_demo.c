@@ -151,6 +151,24 @@ ConfigureUART(void)
     UARTStdioConfig(0, 115200, 16000000);
 }
 
+void myTask1(void *myParameter){
+	while(1){
+		xSemaphoreTake(g_pUARTSemaphore, 1000);
+		UARTprintf("I am in Task 1.\n");
+		xSemaphoreGive(g_pUARTSemaphore);
+		vTaskDelay(500);
+	}
+}
+
+void myTask2(void *myParameter){
+	while(1){
+		xSemaphoreTake(g_pUARTSemaphore, 1000);
+		UARTprintf("I am in Task 2.\n");
+		xSemaphoreGive(g_pUARTSemaphore);
+		vTaskDelay(300);
+	}
+}
+
 //*****************************************************************************
 //
 // Initialize FreeRTOS and start the initial set of tasks.
@@ -180,38 +198,17 @@ main(void)
     //
     g_pUARTSemaphore = xSemaphoreCreateMutex();
 
-    //
-    // Create the LED task.
-    //
-    if(LEDTaskInit() != 0)
-    {
-
-        while(1)
-        {
-        }
+    if(!xTaskCreate(myTask1,(const char*)"task1",128,0,0,0)){
+    	xSemaphoreTake(g_pUARTSemaphore, 1000);
+    	UARTprintf("Task 1 initialization failed\n");
+    	xSemaphoreGive(g_pUARTSemaphore);
     }
-
-    //
-    // Create the switch task.
-    //
-    if(SwitchTaskInit() != 0)
-    {
-
-        while(1)
-        {
-        }
+    if(!xTaskCreate(myTask2,(const char*)"task2",128,0,0,0)){
+    	xSemaphoreTake(g_pUARTSemaphore, 1000);
+    	UARTprintf("Task 2 initialization failed\n");
+    	xSemaphoreGive(g_pUARTSemaphore);
     }
-
-    //
-    // Start the scheduler.  This should not return.
-    //
     vTaskStartScheduler();
-
-    //
-    // In case the scheduler returns for some reason, print an error and loop
-    // forever.
-    //
-
     while(1)
     {
     }
